@@ -1,0 +1,10 @@
+{
+  "name": "@mdarai/print-agent",
+  "version": "0.0.0",
+  "private": true,
+  "description": "In-store print agent (phase 4): polls the API for print jobs and prints ESC/POS picking slips.",
+  "scripts": {
+    "build": "echo 'print-agent: implemented in phase 4'",
+    "typecheck": "echo 'print-agent: implemented in phase 4'"
+  }
+}

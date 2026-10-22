@@ -9,7 +9,7 @@
     "build": "pnpm -r --filter './packages/**' build && pnpm --filter @mdarai/api build && pnpm --filter @mdarai/print-agent build && pnpm --filter @mdarai/web build",
     "build:packages": "pnpm -r --filter './packages/**' build",
     "typecheck": "pnpm -r typecheck",
-    "test": "vitest run",
+    "test": "vitest run --project unit",
     "test:unit": "vitest run --project unit",
     "test:integration": "vitest run --project integration",
     "test:e2e": "playwright test",

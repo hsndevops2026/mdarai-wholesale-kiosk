@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+/* MdarAi palette */
+@theme {
+  --color-brand-blue: #0078fc;
+  --color-brand-royal: #0054e4;
+  --color-brand-indigo: #3d3bfd;
+  --color-brand-violet: #6c24f0;
+  --color-brand-purple: #8f28f5;
+  --color-navy: #000d3c;
+  --color-slate-ink: #30394b;
+  --color-lavender: #e4d8fc;
+  --font-sans: "IBM Plex Sans Arabic", "Noto Sans Arabic", "Noto Sans Hebrew", Tahoma, Arial, sans-serif;
+}
+
+html,
+body {
+  background: #f6f7fb;
+  color: var(--color-navy);
+}
+
+/* Kiosk: no accidental text selection / double-tap zoom on touch targets */
+.touch-ui {
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+.touch-ui input,
+.touch-ui textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.brand-gradient {
+  background-image: linear-gradient(135deg, #0078fc 0%, #3d3bfd 50%, #8f28f5 100%);
+}

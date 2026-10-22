@@ -1,0 +1,11 @@
+**/node_modules
+**/dist
+**/.next
+**/src/generated
+.env
+.env.*
+!.env.example
+test-results
+playwright-report
+print-output
+.git
