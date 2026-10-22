@@ -300,6 +300,7 @@ model OrderItem {
   unit            SalesUnit
   quantity        Int
   piecesPerCarton Int
+  pieceLabel      String?
   barcode         String?
   aisle           String?
   shelf           String?

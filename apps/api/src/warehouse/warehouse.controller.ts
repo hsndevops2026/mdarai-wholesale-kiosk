@@ -6,6 +6,7 @@ import { CurrentStaff, Roles, StaffGuard } from '../auth/guards';
 import { ZodPipe } from '../core/zod.pipe';
 import { serializeOrder } from '../orders/order.serializer';
 import { OrderService } from '../orders/order.service';
+import { PrintService } from '../printing/print.service';
 
 const StatusEnum = z.enum(ORDER_STATUSES as [OrderStatus, ...OrderStatus[]]);
 const ListQuery = z.object({
@@ -26,7 +27,16 @@ const StatusBody = z.object({ status: StatusEnum });
 @UseGuards(StaffGuard)
 @Roles('WAREHOUSE', 'ADMIN')
 export class WarehouseController {
-  constructor(private readonly orders: OrderService) {}
+  constructor(
+    private readonly orders: OrderService,
+    private readonly print: PrintService,
+  ) {}
+
+  /** Print agents seen in the last minutes (for the "printer online" badge). */
+  @Get('printers/status')
+  printers() {
+    return { agents: this.print.agentStatus() };
+  }
 
   @Get()
   async list(@Query(new ZodPipe(ListQuery)) q: z.infer<typeof ListQuery>) {
@@ -55,5 +65,11 @@ export class WarehouseController {
   @HttpCode(200)
   async status(@Param('id') id: string, @Body(new ZodPipe(StatusBody)) b: z.infer<typeof StatusBody>, @CurrentStaff() staff: StaffUser) {
     return serializeOrder(await this.orders.setStatus(id, b.status, staff.id));
+  }
+
+  @Post(':id/reprint')
+  @HttpCode(200)
+  reprint(@Param('id') id: string, @CurrentStaff() staff: StaffUser) {
+    return this.print.reprint(id, staff.id);
   }
 }

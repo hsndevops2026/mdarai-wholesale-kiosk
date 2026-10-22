@@ -40,5 +40,17 @@ services:
     ports: ["3000:3000"]
     depends_on: [api]
 
+  # Print agent with the simulated printer: slips land in ./print-output as PNG/TXT.
+  # In the store it runs on a local machine instead (services/print-agent/README.md).
+  print-agent:
+    build: { context: ., dockerfile: infrastructure/docker/print-agent.Dockerfile }
+    environment:
+      API_URL: http://api:4000
+      PRINT_AGENT_TOKEN: dev-only-print-agent-token-0000
+      PRINTER_MODE: simulated
+      PRINT_OUTPUT_DIR: /out
+    volumes: ["./print-output:/out"]
+    depends_on: [api]
+
 volumes:
   pgdata:

@@ -46,7 +46,8 @@ export class KioskController {
   @Post('identify')
   @HttpCode(200)
   @UseGuards(KioskDeviceGuard)
-  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  // Per client IP. The store's tablets share one IP, so keep this above normal walk-in traffic.
+  @Throttle({ default: { limit: Number(process.env.KIOSK_IDENTIFY_PER_MINUTE ?? 10), ttl: 60_000 } })
   async identify(@CurrentDevice() device: KioskDevice, @Body(new ZodPipe(IdentifySchema)) body: z.infer<typeof IdentifySchema>, @ClientIp() ip: string | null) {
     const { token, session, customer } = await this.auth.identify(device, body.nationalId, ip);
     return {

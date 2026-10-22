@@ -26,7 +26,7 @@ Headers: `x-kiosk-device` (kiosk device token), `x-kiosk-session` (customer sess
 
 `CommandResult` (see `packages/shared-types`): `{utteranceId, transcript, parser, applied[], messages[], clarifications[], searchResults[], cart, duplicate}`.
 
-Error codes: `DEVICE_REQUIRED`, `DEVICE_INVALID`, `CUSTOMER_NOT_FOUND`, `TOO_MANY_ATTEMPTS`, `SESSION_REQUIRED`, `SESSION_INVALID`, `SESSION_EXPIRED`, `SESSION_ENDED`, `VALIDATION_FAILED`, `UNIT_NOT_SOLD`, `CART_EMPTY`, `PENDING_CLARIFICATIONS`, `IDEMPOTENCY_KEY_REUSED`, `PRODUCT_UNAVAILABLE`.
+Error codes: `RATE_LIMITED`, `DEVICE_REQUIRED`, `DEVICE_INVALID`, `CUSTOMER_NOT_FOUND`, `TOO_MANY_ATTEMPTS`, `SESSION_REQUIRED`, `SESSION_INVALID`, `SESSION_EXPIRED`, `SESSION_ENDED`, `VALIDATION_FAILED`, `UNIT_NOT_SOLD`, `CART_EMPTY`, `PENDING_CLARIFICATIONS`, `IDEMPOTENCY_KEY_REUSED`, `PRODUCT_UNAVAILABLE`.
 
 ## Staff
 
@@ -38,6 +38,16 @@ Error codes: `DEVICE_REQUIRED`, `DEVICE_INVALID`, `CUSTOMER_NOT_FOUND`, `TOO_MAN
 | GET | `/warehouse/orders` | `status=NEW,PREPARING&from&to&q&take&skip` | `{total, orders[]}` |
 | GET | `/warehouse/orders/:id` | – | order with items, print jobs, status history |
 | POST | `/warehouse/orders/:id/status` | `{status}` | order (allowed transitions only) |
+| POST | `/warehouse/orders/:id/reprint` | – | `{jobId, status}`. 409 `PRINT_ALREADY_QUEUED` while one is waiting |
+| GET | `/warehouse/orders/printers/status` | – | `{agents: [{id, lastSeen, online}]}` |
+
+## Print agent (header `x-print-agent-token`)
+
+| Method | Path | Body | Returns |
+|---|---|---|---|
+| POST | `/print-agent/jobs/claim` | `{agentId}` | 204 when idle, else the slip payload (no prices) |
+| POST | `/print-agent/jobs/:id/complete` | `{agentId}` | `{status}`, idempotent |
+| POST | `/print-agent/jobs/:id/fail` | `{agentId, error}` | `{status, nextAttemptAt}` |
 
 ## Admin (role ADMIN)
 

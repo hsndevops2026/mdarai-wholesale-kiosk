@@ -2,7 +2,7 @@
 
 A touchscreen ordering kiosk for wholesale stores in Israel. Customers identify themselves, say or type their order in Palestinian Arabic (with Hebrew product names mixed in), fix it by voice or touch, and confirm. The order then appears on the warehouse dashboard.
 
-> **Status:** Phases 1–2. The text ordering flow and Excel import work end to end with fictional data. Voice input, printing and cloud deployment are not built yet. See [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md).
+> **Status:** Phases 1, 2 and 4. Text ordering, Excel import and automatic picking-slip printing work end to end with fictional data (printing verified with a simulated printer). Voice input (phase 3) and cloud deployment (phase 5) are next. See [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md).
 > Customer identification by national ID is **demo-only**. Read [`docs/architecture/security-review.md`](docs/architecture/security-review.md) before any production use.
 
 ## Layout
@@ -16,7 +16,7 @@ packages/pricing-engine   deterministic pricing (decimal.js)
 packages/product-matcher  Arabic/Hebrew catalog matching
 packages/ai-order-parser  rule-based parser + optional OpenAI parser
 packages/speech-providers STT abstraction (phase 3)
-services/print-agent  in-store print agent (phase 4)
+services/print-agent  in-store print agent: picking slips on a thermal printer (see its README)
 tests/                integration, e2e (Playwright), voice fixtures
 docs/                 architecture, API, deployment, user guide
 ```
@@ -36,6 +36,7 @@ pnpm db:migrate && pnpm db:seed
 pnpm build:packages
 pnpm --filter @mdarai/api build && pnpm --filter @mdarai/api start     # http://localhost:4000
 pnpm --filter @mdarai/web dev                                            # http://localhost:3000
+pnpm --filter @mdarai/print-agent build && pnpm --filter @mdarai/print-agent start   # simulated printer → ./print-output
 ```
 
 Or run everything in Docker: `docker compose up --build` (see the note in IMPLEMENTATION_PLAN about verification).
@@ -55,7 +56,8 @@ Try on the kiosk: «بدي خمس كراتين חלב תנובה وثلاث كر
 
 ```bash
 pnpm test:unit                       # pricing, matcher, parser (34 extraction sentences), OpenAI parser (mocked)
-pnpm test:integration                # needs the API running against the seeded DB
+pnpm test:integration                # needs the API running against the seeded DB, with
+                                     # KIOSK_IDENTIFY_PER_MINUTE=500 KIOSK_MAX_FAILED_IDENTIFY=100 (test runs log in many times)
 PW_CHROMIUM_PATH=/path/to/chrome pnpm test:e2e   # browser test of the full kiosk flow
 ```
 

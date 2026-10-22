@@ -76,6 +76,7 @@ export class OrderService {
           items: {
             create: view.lines.map((l) => ({
               productId: l.productId,
+              pieceLabel: l.pieceLabel,
               barcode: this.catalog.get(l.productId)?.barcode ?? null,
               aisle: this.catalog.get(l.productId)?.aisle ?? null,
               shelf: this.catalog.get(l.productId)?.shelf ?? null,

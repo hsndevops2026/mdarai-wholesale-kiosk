@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { AppThrottlerGuard } from './core/throttler.guard';
 import { AdminController } from './admin/admin.controller';
 import { ImportService } from './admin/import.service';
 import { TemplateService } from './admin/template.service';
@@ -19,6 +20,8 @@ import { PrismaService } from './core/prisma.service';
 import { CartService } from './kiosk/cart.service';
 import { KioskController } from './kiosk/kiosk.controller';
 import { OrderService } from './orders/order.service';
+import { PrintAgentController } from './printing/print-agent.controller';
+import { PrintService } from './printing/print.service';
 import { WarehouseController } from './warehouse/warehouse.controller';
 import { WarehouseGateway } from './warehouse/warehouse.gateway';
 
@@ -26,10 +29,10 @@ const config = loadConfig();
 
 @Module({
   imports: [ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: config.RATE_LIMIT_PER_MINUTE }])],
-  controllers: [HealthController, KioskController, StaffController, WarehouseController, AdminController],
+  controllers: [HealthController, KioskController, StaffController, WarehouseController, AdminController, PrintAgentController],
   providers: [
     { provide: APP_CONFIG, useValue: config },
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: AppThrottlerGuard },
     PrismaService,
     AuditService,
     EventsService,
@@ -47,6 +50,7 @@ const config = loadConfig();
     WarehouseGateway,
     ImportService,
     TemplateService,
+    PrintService,
   ],
 })
 export class AppModule {}

@@ -33,12 +33,14 @@ Legend: ✅ done and verified · 🟡 implemented, not verified against the real
 - Evaluation harness: recorded fixtures → measure transcription WER and extraction accuracy **separately**
 - Optional: `ORDER_PARSER=openai`, kept only if it beats the rules on recordings
 
-## Phase 4 — Warehouse and printing ⬜
+## Phase 4 — Warehouse and printing ✅ (🟡 physical printer)
 
-- Print job API (claim / complete / fail, retry with backoff, stale-claim recovery, authorized reprint)
-- Print agent: ESC/POS over TCP 9100 (network thermal printer), plus a simulated printer for tests
-- Picking slip layout: order number, customer code, aisle/shelf (from the store template), SKU, name, quantity, unit
-- Warehouse UI: print status and reprint (the button exists, the endpoint comes in this phase)
+- ✅ Print job API: claim (`FOR UPDATE SKIP LOCKED`, stale-claim recovery), complete (idempotent), fail (exponential backoff, 5 attempts → FAILED), staff reprint (refused while one is queued), audit log
+- ✅ Print agent (`services/print-agent`): slip rendered as an image with Noto Arabic/Hebrew fonts → ESC/POS raster over TCP 9100. Simulated and stdout printers. Local journal prevents duplicate copies after a crash
+- ✅ Slip: order number, customer, quantity and unit, Arabic and Hebrew names, aisle-shelf, SKU, pieces per carton, sorted for picking, **no prices**, reprint banner
+- ✅ Warehouse UI: printer online badge, print status per order, reprint
+- ✅ Tests: ESC/POS encoding, rendering (80 and 58 mm), agent loop (failure, crash, no double print), a fake TCP printer, and API plus a real agent process end to end
+- 🟡 **Not tested on a physical printer yet**: needs the store's printer model. USB-only printers need a spooler adapter
 
 ## Phase 5 — Testing and deployment ⬜
 
@@ -49,7 +51,7 @@ Legend: ✅ done and verified · 🟡 implemented, not verified against the real
 ## Open questions for the store (block correctness, not the code)
 
 1. Are wholesale prices quoted before or after VAT? (Currently `PRICES_INCLUDE_VAT=false`.)
-2. The template has one unit and one price per product. Do you sell by the carton? If yes: pieces per carton and carton prices (new optional columns). Where are customer-specific prices kept today?
-3. Which tablet (iPad or Android) and which printer (model, 58 or 80 mm, network or USB)?
+2. ✅ Answered: both carton and piece. Every customer has their own prices → fill `Pieces_Per_Carton`, `Carton_Price_ILS` and the `Customer_Prices` sheet.
+3. Which tablet (iPad or Android) and which printer (model, 58 or 80 mm, network or USB)? Which always-on machine in the store will run the print agent?
 4. When several variants match ("حليب تنوفا"), should one be the default (via alias), or should the system always ask?
 5. Security before production: which second factor (PIN, SMS OTP, staff approval)? See `docs/architecture/security-review.md`.

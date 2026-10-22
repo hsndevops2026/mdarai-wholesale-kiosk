@@ -1,10 +1,16 @@
 {
   "name": "@mdarai/print-agent",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
-  "description": "In-store print agent (phase 4): polls the API for print jobs and prints ESC/POS picking slips.",
+  "description": "In-store print agent: polls the API for print jobs and prints picking slips (ESC/POS raster) on a thermal printer.",
+  "main": "dist/main.js",
   "scripts": {
-    "build": "echo 'print-agent: implemented in phase 4'",
-    "typecheck": "echo 'print-agent: implemented in phase 4'"
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "start": "node dist/main.js",
+    "dev": "tsc -p tsconfig.json && node dist/main.js"
+  },
+  "dependencies": {
+    "@napi-rs/canvas": "1.0.13"
   }
 }
