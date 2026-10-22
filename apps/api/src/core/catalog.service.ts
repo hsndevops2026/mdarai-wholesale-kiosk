@@ -6,6 +6,10 @@ import { PrismaService } from './prisma.service';
 export interface CatalogProduct extends MatchableProduct {
   category: string | null;
   imageUrl: string | null;
+  pieceLabel: string | null;
+  barcode: string | null;
+  aisle: string | null;
+  shelf: string | null;
   piecesPerCarton: number;
   defaultPiecePrice: string | null;
   defaultCartonPrice: string | null;
@@ -53,6 +57,10 @@ export class CatalogService {
         aliases: p.aliases.map((a) => a.alias),
         category: p.category,
         imageUrl: p.imageUrl,
+        pieceLabel: p.pieceLabel,
+        barcode: p.barcode,
+        aisle: p.aisle,
+        shelf: p.shelf,
         piecesPerCarton: p.piecesPerCarton,
         defaultPiecePrice: p.defaultPiecePrice?.toFixed(2) ?? null,
         defaultCartonPrice: p.defaultCartonPrice?.toFixed(2) ?? null,
@@ -109,6 +117,7 @@ export class CatalogService {
       size: p.size,
       category: p.category,
       imageUrl: p.imageUrl,
+      pieceLabel: p.pieceLabel,
       piecesPerCarton: p.piecesPerCarton,
       sellsPiece: p.defaultPiecePrice !== null,
       sellsCarton: p.defaultCartonPrice !== null,

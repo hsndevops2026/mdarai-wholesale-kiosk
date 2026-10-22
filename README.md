@@ -2,14 +2,14 @@
 
 A touchscreen ordering kiosk for wholesale stores in Israel. Customers identify themselves, say or type their order in Palestinian Arabic (with Hebrew product names mixed in), fix it by voice or touch, and confirm. The order then appears on the warehouse dashboard.
 
-> **Status:** Phases 1–2. The text ordering flow works end to end with fictional data. Voice input, Excel import, printing and cloud deployment are not built yet. See [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md).
+> **Status:** Phases 1–2. The text ordering flow and Excel import work end to end with fictional data. Voice input, printing and cloud deployment are not built yet. See [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md).
 > Customer identification by national ID is **demo-only**. Read [`docs/architecture/security-review.md`](docs/architecture/security-review.md) before any production use.
 
 ## Layout
 
 ```
 apps/api              NestJS REST + socket.io API
-apps/web              Next.js app: /kiosk, /warehouse (and /admin later)
+apps/web              Next.js app: /kiosk, /warehouse, /admin (Excel import, kiosk devices)
 packages/shared-types Zod schemas + shared view types
 packages/database     Prisma schema, migrations, seed (fictional data)
 packages/pricing-engine   deterministic pricing (decimal.js)
@@ -60,6 +60,8 @@ PW_CHROMIUM_PATH=/path/to/chrome pnpm test:e2e   # browser test of the full kios
 ```
 
 ## Maintenance
+
+- Catalog and prices: Excel import at `/admin` (guide: [`docs/user-guide/excel-import.md`](docs/user-guide/excel-import.md)).
 
 - Catalog changes made in the DB are picked up by the API within 5 minutes (in-memory cache).
 - Schema changes: edit `packages/database/prisma/schema.prisma`, then `pnpm --filter @mdarai/database exec prisma migrate dev --name <change>`.

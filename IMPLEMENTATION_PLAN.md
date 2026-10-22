@@ -20,8 +20,9 @@ Legend: ✅ done and verified · 🟡 implemented, not verified against the real
 - ✅ Kiosk API: identify, session, catalog with customer prices, cart CRUD, commands, clarifications, confirm
 - ✅ Kiosk UI: keypad, typed order box, clarification cards, catalog and search, touch cart, review, confirmation, idle warning and auto-logout
 - ✅ Warehouse UI (basic): login, live list over websocket, details, status changes
-- ⬜ Excel/CSV import with preview. Waiting for the store's real Excel file so the column mapping matches it
-- ⬜ Admin UI: customers, kiosk device registration, prices
+- ✅ Excel/CSV import: reads the store's template as-is (`Products` sheet) plus optional carton columns and `Customers` / `Customer_Prices` / `Price_Tiers` sheets. Preview with row-level errors, DB cross-checks, diff, one-time commit, re-validation at commit. Template download and catalog export (round trip verified: 118/118 unchanged)
+- ✅ Admin UI: import, kiosk device registration (token shown once) and deactivation
+- ⬜ Admin UI for editing customers and prices one by one (use Excel for now)
 
 ## Phase 3 — Voice ⬜
 
@@ -36,7 +37,7 @@ Legend: ✅ done and verified · 🟡 implemented, not verified against the real
 
 - Print job API (claim / complete / fail, retry with backoff, stale-claim recovery, authorized reprint)
 - Print agent: ESC/POS over TCP 9100 (network thermal printer), plus a simulated printer for tests
-- Picking slip layout: order number, customer code, SKU, name, quantity, unit
+- Picking slip layout: order number, customer code, aisle/shelf (from the store template), SKU, name, quantity, unit
 - Warehouse UI: print status and reprint (the button exists, the endpoint comes in this phase)
 
 ## Phase 5 — Testing and deployment ⬜
@@ -48,7 +49,7 @@ Legend: ✅ done and verified · 🟡 implemented, not verified against the real
 ## Open questions for the store (block correctness, not the code)
 
 1. Are wholesale prices quoted before or after VAT? (Currently `PRICES_INCLUDE_VAT=false`.)
-2. Real Excel file: column names, how customer prices and tiers are kept today.
+2. The template has one unit and one price per product. Do you sell by the carton? If yes: pieces per carton and carton prices (new optional columns). Where are customer-specific prices kept today?
 3. Which tablet (iPad or Android) and which printer (model, 58 or 80 mm, network or USB)?
 4. When several variants match ("حليب تنوفا"), should one be the default (via alias), or should the system always ask?
 5. Security before production: which second factor (PIN, SMS OTP, staff approval)? See `docs/architecture/security-review.md`.

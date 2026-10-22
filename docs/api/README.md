@@ -39,6 +39,17 @@ Error codes: `DEVICE_REQUIRED`, `DEVICE_INVALID`, `CUSTOMER_NOT_FOUND`, `TOO_MAN
 | GET | `/warehouse/orders/:id` | – | order with items, print jobs, status history |
 | POST | `/warehouse/orders/:id/status` | `{status}` | order (allowed transitions only) |
 
+## Admin (role ADMIN)
+
+| Method | Path | Body | Returns |
+|---|---|---|---|
+| POST | `/admin/import/preview` | multipart `file` (.xlsx / .csv, ≤ 10 MB) | `{id, summary, issues[], changes[], canCommit}`. No data changes |
+| POST | `/admin/import/:id/commit` | – | `{summary}`. Once per preview, valid 1 h, re-validated |
+| GET | `/admin/import/template` | `?data=1` exports the current catalog | xlsx file |
+| GET | `/admin/kiosk-devices` | – | `{devices[]}` |
+| POST | `/admin/kiosk-devices` | `{name}` | `{id, name, token}`. The token is shown only once |
+| POST | `/admin/kiosk-devices/:id/deactivate` | – | ends any open session on it |
+
 ## WebSocket
 
 socket.io namespace `/warehouse`, `auth: { token: <staff token> }`. Events: `order.created`, `order.updated`, `print.updated` (payloads carry ids; fetch details over REST).

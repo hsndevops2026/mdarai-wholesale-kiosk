@@ -3,6 +3,7 @@
 import { ORDER_STATUS_TRANSITIONS, WS_EVENTS, type OrderStatus } from '@mdarai/shared-types';
 import { useCallback, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
+import { StaffLogin } from '@/components/StaffLogin';
 import { api, API_URL, ApiError, money } from '@/lib/api';
 
 const TOKEN_KEY = 'mdarai.staff.token';
@@ -38,7 +39,7 @@ interface OrderDetail extends Omit<OrderRow, 'itemCount'> {
   subtotal: string;
   vat: string;
   discountTotal: string;
-  items: Array<{ id: string; sku: string; nameAr: string; nameHe: string | null; unit: 'piece' | 'carton'; quantity: number; piecesPerCarton: number; unitPrice: string; lineTotal: string }>;
+  items: Array<{ id: string; sku: string; aisle: string | null; shelf: string | null; nameAr: string; nameHe: string | null; unit: 'piece' | 'carton'; quantity: number; piecesPerCarton: number; unitPrice: string; lineTotal: string }>;
   printJobs: Array<{ id: string; kind: string; status: string; attempts: number; lastError: string | null; printedAt: string | null; createdAt: string }>;
   statusEvents: Array<{ from: string; to: string; at: string }>;
 }
@@ -160,7 +161,7 @@ export function WarehouseApp() {
   if (!ready) return null;
   if (!token)
     return (
-      <Login
+      <StaffLogin
         onLogin={(t) => {
           try {
             sessionStorage.setItem(TOKEN_KEY, t);
@@ -242,6 +243,7 @@ export function WarehouseApp() {
               <table className="w-full overflow-hidden rounded-xl bg-white text-start ring-1 ring-black/5">
                 <thead className="bg-slate-50 text-sm">
                   <tr>
+                    <th className="p-2 text-start">المكان</th>
                     <th className="p-2 text-start">SKU</th>
                     <th className="p-2 text-start">المنتج</th>
                     <th className="p-2 text-start">الكمية</th>
@@ -252,6 +254,7 @@ export function WarehouseApp() {
                 <tbody className="divide-y">
                   {selected.items.map((i) => (
                     <tr key={i.id}>
+                      <td className="p-2 font-mono text-sm" dir="ltr">{[i.aisle, i.shelf].filter(Boolean).join(' / ') || '—'}</td>
                       <td className="p-2 font-mono text-sm" dir="ltr">{i.sku}</td>
                       <td className="p-2">
                         <div className="font-bold">{i.nameAr}</div>
@@ -287,33 +290,5 @@ export function WarehouseApp() {
         </section>
       </div>
     </div>
-  );
-}
-
-function Login({ onLogin }: { onLogin: (token: string) => void }) {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  return (
-    <form
-      className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center gap-3 p-6"
-      onSubmit={async (e) => {
-        e.preventDefault();
-        try {
-          const r = await api<{ token: string }>('/staff/login', { method: 'POST', body: JSON.stringify({ username, password }) });
-          onLogin(r.token);
-        } catch (err) {
-          setError(err instanceof Error ? err.message : 'خطأ');
-        }
-      }}
-    >
-      <h1 className="text-2xl font-bold">دخول الموظفين</h1>
-      {error && <p className="rounded-xl bg-red-50 p-3 text-red-700">{error}</p>}
-      <input aria-label="اسم المستخدم" placeholder="اسم المستخدم" value={username} onChange={(e) => setUsername(e.target.value)} className="h-12 rounded-xl px-3 ring-1 ring-black/10" dir="ltr" />
-      <input aria-label="كلمة المرور" placeholder="كلمة المرور" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-12 rounded-xl px-3 ring-1 ring-black/10" dir="ltr" />
-      <button type="submit" className="h-12 rounded-xl bg-navy text-white">
-        دخول
-      </button>
-    </form>
   );
 }

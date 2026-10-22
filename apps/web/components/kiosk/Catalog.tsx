@@ -23,7 +23,7 @@ export function ProductGrid({ products, onAdd, busy }: { products: ProductView[]
             )}
             {p.sellsPiece && (
               <button type="button" disabled={busy} onClick={() => onAdd(p, 'piece')} className="flex-1 rounded-xl bg-white px-2 py-3 ring-1 ring-navy">
-                + قطعة
+                + {p.pieceLabel ?? 'قطعة'}
                 <div className="text-sm text-slate-ink">{money(p.piecePrice)}</div>
               </button>
             )}

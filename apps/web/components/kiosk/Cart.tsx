@@ -3,7 +3,7 @@
 import type { CartView } from '@mdarai/shared-types';
 import { money } from '@/lib/api';
 
-const unitLabel = (u: 'piece' | 'carton') => (u === 'carton' ? 'كرتونة' : 'قطعة');
+const unitLabel = (u: 'piece' | 'carton', pieceLabel?: string | null) => (u === 'carton' ? 'كرتونة' : (pieceLabel ?? 'قطعة'));
 
 export function Cart({
   cart,
@@ -60,16 +60,16 @@ export function Cart({
                       onClick={() => onUnit(l.id, u)}
                       className={`h-12 px-4 ${l.unit === u ? 'bg-navy text-white' : 'bg-white'}`}
                     >
-                      {unitLabel(u)}
+                      {unitLabel(u, l.pieceLabel)}
                     </button>
                   ))}
                 </div>
               ) : (
-                <span data-testid="cart-line-unit" className="rounded-xl bg-slate-100 px-3 py-2">{unitLabel(l.unit)}</span>
+                <span data-testid="cart-line-unit" className="rounded-xl bg-slate-100 px-3 py-2">{unitLabel(l.unit, l.pieceLabel)}</span>
               )}
               <div className="ms-auto text-start">
                 <div className="text-sm text-slate-ink">
-                  {money(l.unitPrice)} / {unitLabel(l.unit)}
+                  {money(l.unitPrice)} / {unitLabel(l.unit, l.pieceLabel)}
                   {l.listUnitPrice !== l.unitPrice && <span className="ms-2 text-slate-400 line-through">{money(l.listUnitPrice)}</span>}
                 </div>
                 {Number(l.discountTotal) > 0 && <div className="text-sm text-green-700">خصم {money(l.discountTotal)}</div>}

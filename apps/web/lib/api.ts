@@ -15,7 +15,7 @@ export async function api<T>(path: string, init: RequestInit & { headers?: Recor
   try {
     res = await fetch(`${API_URL}/api${path}`, {
       ...init,
-      headers: { ...(init.body ? { 'content-type': 'application/json' } : {}), ...init.headers },
+      headers: { ...(typeof init.body === 'string' ? { 'content-type': 'application/json' } : {}), ...init.headers },
       cache: 'no-store',
     });
   } catch {
@@ -33,4 +33,19 @@ export function newId(): string {
 
 export function money(v: string | null | undefined): string {
   return v == null ? '—' : `${Number(v).toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₪`;
+}
+
+/** Authenticated file download (used for Excel templates/exports). */
+export async function download(path: string, headers: Record<string, string>, fileName: string): Promise<void> {
+  const res = await fetch(`${API_URL}/api${path}`, { headers, cache: 'no-store' });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new ApiError(res.status, body.code ?? 'ERROR', body.message ?? 'فشل التنزيل');
+  }
+  const url = URL.createObjectURL(await res.blob());
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }

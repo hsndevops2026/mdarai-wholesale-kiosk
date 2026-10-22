@@ -91,6 +91,7 @@ export class PricingService {
         variant: p.variant,
         size: p.size,
         imageUrl: p.imageUrl,
+        pieceLabel: p.pieceLabel,
         unit: l.unit,
         quantity: l.quantity,
         piecesPerCarton: p.piecesPerCarton,

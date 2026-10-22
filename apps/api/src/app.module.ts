@@ -1,6 +1,9 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { AdminController } from './admin/admin.controller';
+import { ImportService } from './admin/import.service';
+import { TemplateService } from './admin/template.service';
 import { KioskDeviceGuard, KioskSessionGuard, PrintAgentGuard, StaffGuard } from './auth/guards';
 import { KioskAuthService } from './auth/kiosk-auth.service';
 import { StaffAuthService } from './auth/staff-auth.service';
@@ -23,7 +26,7 @@ const config = loadConfig();
 
 @Module({
   imports: [ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: config.RATE_LIMIT_PER_MINUTE }])],
-  controllers: [HealthController, KioskController, StaffController, WarehouseController],
+  controllers: [HealthController, KioskController, StaffController, WarehouseController, AdminController],
   providers: [
     { provide: APP_CONFIG, useValue: config },
     { provide: APP_GUARD, useClass: ThrottlerGuard },
@@ -42,6 +45,8 @@ const config = loadConfig();
     CartService,
     OrderService,
     WarehouseGateway,
+    ImportService,
+    TemplateService,
   ],
 })
 export class AppModule {}

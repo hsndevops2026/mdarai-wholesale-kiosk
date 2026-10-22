@@ -70,6 +70,8 @@ export interface ProductView {
   size: string | null;
   category: string | null;
   imageUrl: string | null;
+  /** Word for one piece from the catalog (قطعة / كيس / زجاجة), null = "قطعة". */
+  pieceLabel: string | null;
   piecesPerCarton: number;
   sellsPiece: boolean;
   sellsCarton: boolean;
@@ -87,6 +89,7 @@ export interface CartLineView {
   variant: string | null;
   size: string | null;
   imageUrl: string | null;
+  pieceLabel: string | null;
   unit: SalesUnit;
   quantity: number;
   piecesPerCarton: number;
