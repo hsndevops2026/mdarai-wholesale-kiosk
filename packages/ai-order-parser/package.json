@@ -1,0 +1,16 @@
+{
+  "name": "@mdarai/ai-order-parser",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@mdarai/product-matcher": "workspace:*",
+    "@mdarai/shared-types": "workspace:*",
+    "zod": "4.6.7"
+  }
+}

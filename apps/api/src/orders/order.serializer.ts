@@ -1,0 +1,46 @@
+import type { OrderWithDetails } from './order.service';
+
+export function serializeOrder(o: OrderWithDetails) {
+  return {
+    id: o.id,
+    orderNumber: o.orderNumber,
+    status: o.status,
+    printStatus: o.printStatus,
+    customer: o.customerSnapshot,
+    currency: o.currency,
+    pricesIncludeVat: o.pricesIncludeVat,
+    vatRate: o.vatRate.toString(),
+    subtotal: o.subtotal.toFixed(2),
+    discountTotal: o.discountTotal.toFixed(2),
+    vat: o.vat.toFixed(2),
+    total: o.total.toFixed(2),
+    createdAt: o.createdAt,
+    updatedAt: o.updatedAt,
+    items: o.items.map((i) => ({
+      id: i.id,
+      sku: i.sku,
+      nameAr: i.nameAr,
+      nameHe: i.nameHe,
+      variant: i.variant,
+      size: i.size,
+      unit: i.unit,
+      quantity: i.quantity,
+      piecesPerCarton: i.piecesPerCarton,
+      listUnitPrice: i.listUnitPrice.toFixed(2),
+      unitPrice: i.unitPrice.toFixed(2),
+      discountTotal: i.discountTotal.toFixed(2),
+      lineTotal: i.lineTotal.toFixed(2),
+      pricingRule: i.pricingRule,
+    })),
+    printJobs: o.printJobs.map((j) => ({
+      id: j.id,
+      kind: j.kind,
+      status: j.status,
+      attempts: j.attempts,
+      lastError: j.lastError,
+      printedAt: j.printedAt,
+      createdAt: j.createdAt,
+    })),
+    statusEvents: o.statusEvents.map((e) => ({ from: e.fromStatus, to: e.toStatus, at: e.createdAt, staffUserId: e.staffUserId })),
+  };
+}

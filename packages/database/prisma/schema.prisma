@@ -1,0 +1,392 @@
+// MdarAi Wholesale Voice AI Kiosk — database schema (PostgreSQL, Prisma 7)
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum SalesUnit {
+  piece
+  carton
+}
+
+enum TierKind {
+  FIXED_PRICE
+  PERCENT_OFF
+}
+
+enum OrderStatus {
+  NEW
+  PREPARING
+  READY
+  DELIVERED
+  CANCELLED
+}
+
+enum PrintStatus {
+  PENDING
+  PRINTING
+  PRINTED
+  FAILED
+}
+
+enum PrintJobKind {
+  AUTO
+  REPRINT
+}
+
+enum StaffRole {
+  WAREHOUSE
+  ADMIN
+}
+
+enum ClarificationStatus {
+  PENDING
+  RESOLVED
+  DISMISSED
+}
+
+enum ImportStatus {
+  PREVIEW
+  COMMITTED
+  FAILED
+}
+
+// ---------------------------------------------------------------- customers
+
+model Customer {
+  id             String          @id @default(cuid())
+  code           String          @unique
+  name           String
+  businessName   String
+  /// HMAC-SHA256(ID_HASH_PEPPER, nationalId). The raw national ID is never stored or logged.
+  nationalIdHash String          @unique
+  phone          String?
+  active         Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  prices         CustomerPrice[]
+  tiers          PriceTier[]
+  sessions       KioskSession[]
+  orders         Order[]
+}
+
+// ---------------------------------------------------------------- catalog
+
+model Product {
+  id                 String          @id @default(cuid())
+  sku                String          @unique
+  nameAr             String
+  nameHe             String?
+  brand              String?
+  category           String?
+  variant            String?
+  size               String?
+  imageUrl           String?
+  piecesPerCarton    Int
+  /// null = not sold by the piece
+  defaultPiecePrice  Decimal?        @db.Decimal(12, 2)
+  /// null = not sold by the carton. Never derived from the piece price.
+  defaultCartonPrice Decimal?        @db.Decimal(12, 2)
+  active             Boolean         @default(true)
+  /// Normalised names + aliases, indexed with pg_trgm for touch search.
+  searchText         String          @default("")
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  aliases            ProductAlias[]
+  customerPrices     CustomerPrice[]
+  tiers              PriceTier[]
+  cartItems          CartItem[]
+  orderItems         OrderItem[]
+
+  @@index([category])
+}
+
+model ProductAlias {
+  id        String  @id @default(cuid())
+  productId String
+  alias     String
+  aliasNorm String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, aliasNorm])
+  @@index([aliasNorm])
+}
+
+/// Cross-language vocabulary group, e.g. ["حليب", "חלב"].
+model SynonymGroup {
+  id        String   @id @default(cuid())
+  terms     String[]
+  createdAt DateTime @default(now())
+}
+
+// ---------------------------------------------------------------- pricing
+
+model CustomerPrice {
+  id          String   @id @default(cuid())
+  customerId  String
+  productId   String
+  piecePrice  Decimal? @db.Decimal(12, 2)
+  cartonPrice Decimal? @db.Decimal(12, 2)
+  updatedAt   DateTime @updatedAt
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, productId])
+}
+
+/// Quantity tier. customerId null = applies to all customers.
+/// Overlapping ranges for the same (product, customer, unit) are rejected by an exclusion constraint.
+model PriceTier {
+  id         String    @id @default(cuid())
+  productId  String
+  customerId String?
+  unit       SalesUnit
+  minQty     Int
+  maxQty     Int?
+  kind       TierKind
+  value      Decimal   @db.Decimal(12, 2)
+  createdAt  DateTime  @default(now())
+  product    Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+}
+
+// ---------------------------------------------------------------- kiosk sessions & cart
+
+model KioskDevice {
+  id         String         @id @default(cuid())
+  name       String
+  tokenHash  String         @unique
+  active     Boolean        @default(true)
+  createdAt  DateTime       @default(now())
+  lastSeenAt DateTime?
+  sessions   KioskSession[]
+  orders     Order[]
+}
+
+model KioskSession {
+  id                  String               @id @default(cuid())
+  tokenHash           String               @unique
+  customerId          String
+  deviceId            String?
+  createdAt           DateTime             @default(now())
+  lastActivityAt      DateTime             @default(now())
+  expiresAt           DateTime
+  endedAt             DateTime?
+  endReason           String?
+  /// Last product the customer referred to, for "خليهم سبعة".
+  lastSpokenProduct   String?
+  customer            Customer             @relation(fields: [customerId], references: [id])
+  device              KioskDevice?         @relation(fields: [deviceId], references: [id])
+  cartItems           CartItem[]
+  clarifications      Clarification[]
+  processedUtterances ProcessedUtterance[]
+  orders              Order[]
+
+  @@index([endedAt, expiresAt])
+}
+
+model CartItem {
+  id        String       @id @default(cuid())
+  sessionId String
+  productId String
+  unit      SalesUnit
+  quantity  Int
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  session   KioskSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  product   Product      @relation(fields: [productId], references: [id])
+
+  @@unique([sessionId, productId, unit])
+}
+
+model Clarification {
+  id            String              @id @default(cuid())
+  sessionId     String
+  kind          String
+  intent        String
+  spokenProduct String
+  quantity      Int?
+  unit          SalesUnit?
+  newUnit       SalesUnit?
+  productId     String?
+  options       Json
+  status        ClarificationStatus @default(PENDING)
+  createdAt     DateTime            @default(now())
+  resolvedAt    DateTime?
+  session       KioskSession        @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, status])
+}
+
+/// Idempotency for voice/text commands: a retried utterance is not applied twice.
+model ProcessedUtterance {
+  id          String       @id @default(cuid())
+  sessionId   String
+  utteranceId String
+  transcript  String
+  parser      String
+  result      Json
+  createdAt   DateTime     @default(now())
+  session     KioskSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, utteranceId])
+}
+
+// ---------------------------------------------------------------- orders
+
+model Order {
+  id               String             @id @default(cuid())
+  orderNumber      String             @unique
+  idempotencyKey   String             @unique
+  customerId       String
+  sessionId        String?
+  deviceId         String?
+  status           OrderStatus        @default(NEW)
+  printStatus      PrintStatus        @default(PENDING)
+  currency         String             @default("ILS")
+  pricesIncludeVat Boolean
+  vatRate          Decimal            @db.Decimal(5, 4)
+  subtotal         Decimal            @db.Decimal(12, 2)
+  discountTotal    Decimal            @db.Decimal(12, 2)
+  vat              Decimal            @db.Decimal(12, 2)
+  total            Decimal            @db.Decimal(12, 2)
+  /// Customer code/name at confirmation time.
+  customerSnapshot Json
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  customer         Customer           @relation(fields: [customerId], references: [id])
+  session          KioskSession?      @relation(fields: [sessionId], references: [id])
+  device           KioskDevice?       @relation(fields: [deviceId], references: [id])
+  items            OrderItem[]
+  statusEvents     OrderStatusEvent[]
+  printJobs        PrintJob[]
+
+  @@index([status, createdAt])
+  @@index([createdAt])
+}
+
+/// Immutable price snapshot of each line at confirmation.
+model OrderItem {
+  id              String    @id @default(cuid())
+  orderId         String
+  productId       String
+  sku             String
+  nameAr          String
+  nameHe          String?
+  variant         String?
+  size            String?
+  unit            SalesUnit
+  quantity        Int
+  piecesPerCarton Int
+  listUnitPrice   Decimal   @db.Decimal(12, 2)
+  unitPrice       Decimal   @db.Decimal(12, 2)
+  discountTotal   Decimal   @db.Decimal(12, 2)
+  lineTotal       Decimal   @db.Decimal(12, 2)
+  pricingRule     String
+  tierId          String?
+  order           Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product         Product   @relation(fields: [productId], references: [id])
+}
+
+model OrderStatusEvent {
+  id          String      @id @default(cuid())
+  orderId     String
+  fromStatus  OrderStatus
+  toStatus    OrderStatus
+  staffUserId String?
+  createdAt   DateTime    @default(now())
+  order       Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  staffUser   StaffUser?  @relation(fields: [staffUserId], references: [id])
+}
+
+/// Per-day order sequence used for human-readable order numbers.
+model DailyCounter {
+  day   String @id
+  value Int
+}
+
+// ---------------------------------------------------------------- printing
+
+model PrintJob {
+  id            String       @id @default(cuid())
+  orderId       String
+  kind          PrintJobKind
+  /// "auto:<orderId>" for the automatic slip (one per order), unique per reprint request otherwise.
+  dedupeKey     String       @unique
+  status        PrintStatus  @default(PENDING)
+  attempts      Int          @default(0)
+  maxAttempts   Int          @default(5)
+  nextAttemptAt DateTime     @default(now())
+  claimedAt     DateTime?
+  claimedBy     String?
+  lastError     String?
+  printedAt     DateTime?
+  requestedById String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  order         Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  requestedBy   StaffUser?   @relation(fields: [requestedById], references: [id])
+
+  @@index([status, nextAttemptAt])
+}
+
+// ---------------------------------------------------------------- staff, audit, import
+
+model StaffUser {
+  id           String             @id @default(cuid())
+  username     String             @unique
+  displayName  String
+  passwordHash String
+  role         StaffRole
+  active       Boolean            @default(true)
+  createdAt    DateTime           @default(now())
+  sessions     StaffSession[]
+  statusEvents OrderStatusEvent[]
+  printJobs    PrintJob[]
+  imports      ImportBatch[]
+}
+
+model StaffSession {
+  id          String    @id @default(cuid())
+  tokenHash   String    @unique
+  staffUserId String
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  staffUser   StaffUser @relation(fields: [staffUserId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorType  String
+  actorId    String?
+  action     String
+  entityType String?
+  entityId   String?
+  metadata   Json?
+  ip         String?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([entityType, entityId])
+}
+
+model ImportBatch {
+  id          String       @id @default(cuid())
+  staffUserId String
+  fileName    String
+  status      ImportStatus @default(PREVIEW)
+  summary     Json
+  payload     Json
+  createdAt   DateTime     @default(now())
+  committedAt DateTime?
+  staffUser   StaffUser    @relation(fields: [staffUserId], references: [id])
+}
